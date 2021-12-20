@@ -1,0 +1,79 @@
+version: '3.1'
+
+services:
+
+
+  traefik:
+    image: "traefik:v2.4"
+    container_name: "traefik"
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web-secure.address=:443"
+      - "--providers.file.directory=/configuration/"
+      - "--providers.file.watch=true"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./configuration/:/configuration/"
+
+  cdm:
+    image: "entroserv/cryptdomainmgr:latest"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./configuration/:/configuration/"
+      - "./cdmconf/:/etc/cryptdomainmgr"
+    command:
+      - "[cdm]    postwait=86400"
+
+  whoami:
+    image: "traefik/whoami"
+    container_name: "simpleservice"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.bahn.cf`)"
+      - "traefik.http.routers.whoami.tls=true"
+      - "traefik.http.routers.whoami.entrypoints=web-secure"
+
+  wordpress:
+    build: wordpress
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: wordpress-db
+      WORDPRESS_DB_USER: exampleuser    ## Hier Benutzer eingeben ##
+      WORDPRESS_DB_PASSWORD: examplepass ## Hier Passwort eingeben ##
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - ./wordpress_volume/app:/var/www/html
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wordpress-app.entrypoints=web"
+      - "traefik.http.routers.wordpress-app.rule=Host(`wordpress.bahn.cf`)"  ## Hier eure Domain eingeben ##
+      - "traefik.http.middlewares.wordpress-app-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.wordpress-app.middlewares=wordpress-app-https-redirect"
+      - "traefik.http.routers.wordpress-app-secure.entrypoints=web-secure"
+      - "traefik.http.routers.wordpress-app-secure.rule=Host(`wordpress.bahn.cf`)" ## Hier eure Domain eingeben ##
+      - "traefik.http.routers.wordpress-app-secure.tls=true"
+        #- "traefik.http.routers.wordpress-app-secure.tls.certresolver=http"
+      - "traefik.http.routers.wordpress-app-secure.service=wordpress-app"
+      - "traefik.http.services.wordpress-app.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+        #- "traefik.http.routers.wordpress-app-secure.middlewares=secHeaders@file"
+
+  wordpress-db:
+    image: mysql:5.7
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: exampleuser     ## Hier selben Benutzer eingeben ##
+      MYSQL_PASSWORD: examplepass ## Hier selbes Passwort eingeben ##
+      MYSQL_RANDOM_ROOT_PASSWORD: '1'
+    volumes:
+      - ./wordpress_volume/database:/var/lib/mysql
+
+

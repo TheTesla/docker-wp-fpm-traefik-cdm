@@ -1,0 +1,8 @@
+[[tls.certificates]]
+   certFile = "/configuration/certs/whoamicert/cert.pem"
+   keyFile = "/configuration/certs/whoamicert/key.pem"
+
+[[tls.certificates]]
+   certFile = "/configuration/certs/wordpresscert/cert.pem"
+   keyFile = "/configuration/certs/wordpresscert/key.pem"
+
