@@ -6,6 +6,10 @@ services:
   traefik:
     image: "traefik:v2.4"
     container_name: "traefik"
+    networks:
+      default:
+        aliases:
+          - ${PRIMARY_DOMAIN}
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
@@ -44,24 +48,28 @@ services:
   nginx:
     image: nginx:latest
     volumes:
-        - ./nginx:/etc/nginx/conf.d
-        - ./logs/nginx:/var/log/nginx
-        - ./wordpress_volume/app:/var/www/html
+      - ./nginx:/etc/nginx/templates
+      - ./logs/nginx:/var/log/nginx
+      - ./wordpress_volume/app:/var/www/html
     restart: always
+    environment:
+      - NGINX_PORT=80
+      - NGINX_HOST=${PRIMARY_DOMAIN}
+      - NGINX_ROOT=/var/www/html
+      - FPM_CONTAINER=wordpress
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.wordpress-app.entrypoints=web"
-      - "traefik.http.routers.wordpress-app.rule=Host(`wordpress.bahn.cf`)"  ## Hier eure Domain eingeben ##
+      - "traefik.http.routers.wordpress-app.rule=Host(`${PRIMARY_DOMAIN}`)"  ## Hier eure Domain eingeben ##
       - "traefik.http.middlewares.wordpress-app-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.wordpress-app.middlewares=wordpress-app-https-redirect"
       - "traefik.http.routers.wordpress-app-secure.entrypoints=web-secure"
-      - "traefik.http.routers.wordpress-app-secure.rule=Host(`wordpress.bahn.cf`)" ## Hier eure Domain eingeben ##
+      - "traefik.http.routers.wordpress-app-secure.rule=Host(`${PRIMARY_DOMAIN}`)" ## Hier eure Domain eingeben ##
       - "traefik.http.routers.wordpress-app-secure.tls=true"
         #- "traefik.http.routers.wordpress-app-secure.tls.certresolver=http"
       - "traefik.http.routers.wordpress-app-secure.service=wordpress-app"
       - "traefik.http.services.wordpress-app.loadbalancer.server.port=80"
       - "traefik.http.services.wordpress-app.loadbalancer.server.scheme=h2c"
-
       - "traefik.docker.network=proxy"
         #- "traefik.http.routers.wordpress-app-secure.middlewares=secHeaders@file"
 
