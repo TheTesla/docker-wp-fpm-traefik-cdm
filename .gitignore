@@ -1,2 +1,7 @@
 inwxcreds.conf
+*.swp
 *volume
+logs/
+certs/
+reloadtrigger
+*_old/

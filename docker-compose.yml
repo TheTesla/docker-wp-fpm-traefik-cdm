@@ -40,16 +40,14 @@ services:
       - "traefik.http.routers.whoami.tls=true"
       - "traefik.http.routers.whoami.entrypoints=web-secure"
 
-  wordpress:
-    build: wordpress
-    restart: unless-stopped
-    environment:
-      WORDPRESS_DB_HOST: wordpress-db
-      WORDPRESS_DB_USER: exampleuser    ## Hier Benutzer eingeben ##
-      WORDPRESS_DB_PASSWORD: examplepass ## Hier Passwort eingeben ##
-      WORDPRESS_DB_NAME: wordpress
+
+  nginx:
+    image: nginx:latest
     volumes:
-      - ./wordpress_volume/app:/var/www/html
+        - ./nginx:/etc/nginx/conf.d
+        - ./logs/nginx:/var/log/nginx
+        - ./wordpress_volume/app:/var/www/html
+    restart: always
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.wordpress-app.entrypoints=web"
@@ -62,8 +60,23 @@ services:
         #- "traefik.http.routers.wordpress-app-secure.tls.certresolver=http"
       - "traefik.http.routers.wordpress-app-secure.service=wordpress-app"
       - "traefik.http.services.wordpress-app.loadbalancer.server.port=80"
+      - "traefik.http.services.wordpress-app.loadbalancer.server.scheme=h2c"
+
       - "traefik.docker.network=proxy"
         #- "traefik.http.routers.wordpress-app-secure.middlewares=secHeaders@file"
+
+
+
+  wordpress:
+    build: wordpress
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: wordpress-db
+      WORDPRESS_DB_USER: exampleuser    ## Hier Benutzer eingeben ##
+      WORDPRESS_DB_PASSWORD: examplepass ## Hier Passwort eingeben ##
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - ./wordpress_volume/app:/var/www/html
 
   wordpress-db:
     image: mysql:5.7

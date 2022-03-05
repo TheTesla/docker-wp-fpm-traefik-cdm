@@ -1,4 +1,4 @@
-FROM wordpress:latest
+FROM wordpress:php8.1-fpm
 
 COPY custom.ini $PHP_INI_DIR/conf.d/
 
