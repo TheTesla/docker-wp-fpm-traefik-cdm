@@ -33,7 +33,7 @@ services:
       - "./configuration/:/configuration/"
       - "./cdmconf/:/etc/cryptdomainmgr"
     command:
-      - "[cdm]    postwait=86400"
+      - "[cdm]    postwait=86400    [domain:${PRIMARY_DOMAIN}]    ip4=auto    cert=wordpresscert    tlsa.tcp.443=auto:3:1:1,auto:2:0:1    "
 
   whoami:
     image: "traefik/whoami"
