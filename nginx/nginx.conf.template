@@ -1,4 +1,15 @@
 server { 
+
+  gzip on;
+  gzip_proxied    any;
+  gzip_buffers    16 8k;
+  gzip_comp_level 6;
+
+  gzip_types      text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;
+
+  gzip_min_length 1000;
+
+
   listen ${NGINX_PORT} http2; 
   server_name ${NGINX_HOST}; 
   root ${NGINX_ROOT}; 
